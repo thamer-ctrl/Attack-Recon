@@ -1,0 +1,36 @@
+*Active:-
+1) ffuf -u http://host.FUZZ -recursion -recursion-depth 1 -w all_tld.txt -mc 200 -o output.txt
+2) amass enum -active -w subs_wordlists.txt -df roots.txt -min-for-recursive 5 -brute > brute_output.txt 
+3) shuffledns 
+   (Note: dnsvalidator -tL https://public-dns.info/nameservers.txt -threads 100 -o resolvers.txt)
+"""""""""""                                                                    
+#!/bin/bash
+
+while read line;
+do
+shuffledns -w /usr/share/wordlists/all.txt -strict-wildcard -o shuffledns_output.txt -nC -r resolvers.txt -d $line >> shuffledns_subs.txt
+process_id=$!
+wait $process_id
+done < /path/to/output
+
+""""""""""
+
+*Passive:-
+1) amass enum -passive -df roots.txt -config ./config.ini -dir .> passive_output.txt
+
+2) gauplus
+"""""""""
+#!/bin/bash
+
+cat /path/to/root/roots.txt | while read line || [[ -n $line ]];
+do
+gauplus -t 5 -random-agent -subs $1 |  unfurl -u domains | anew output.txt
+wait
+done
+
+""""""""
+*Takover:-
+1) tko-subs -domains subs.txt -threads 50 -data providers-data.csv -output tkosubs_output
+2) subjack -w subs.txt -o subjack_output.txt -a -c ./fingerprints.json
+3) SubOver -l subs.txt -a -t 50
+4) nuclei -list subs.txt -t takeovers/ -o nulcei_output.txt
